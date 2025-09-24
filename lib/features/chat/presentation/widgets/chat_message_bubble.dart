@@ -60,7 +60,7 @@ class ChatMessageBubble extends StatelessWidget {
                         color: AppTheme.mediumText.withOpacity(0.1),
                         width: 1,
                       ),
-              ),
+            
               child: Text(
                 message.content,
                 style: TextStyle(

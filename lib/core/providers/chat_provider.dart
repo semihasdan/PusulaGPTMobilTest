@@ -163,6 +163,96 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = const ChatState.initial();
     _ref.read(activeConversationProvider.notifier).clearActiveConversation();
   }
+
+  // ✅ Update message feedback state
+  void updateMessageFeedback(String messageId, FeedbackState feedbackState, {String? feedback}) {
+    if (!mounted) return;
+    
+    final updatedMessages = state.messages.map((message) {
+      if (message.id == messageId) {
+        return message.copyWith(feedbackState: feedbackState);
+      }
+      return message;
+    }).toList();
+    
+    state = state.copyWith(messages: updatedMessages);
+    
+    // Update conversation if active
+    final activeConversationId = _ref.read(activeConversationProvider);
+    if (activeConversationId != null) {
+      final conversations = _ref.read(conversationsProvider);
+      final conversation = conversations.where((c) => c.id == activeConversationId).firstOrNull;
+      if (conversation != null) {
+        final updatedConversation = conversation.copyWith(
+          messages: updatedMessages,
+          lastUpdated: DateTime.now(),
+        );
+        _ref.read(conversationsProvider.notifier).updateConversation(activeConversationId, updatedConversation);
+      }
+    }
+  }
+
+  // ✅ Regenerate AI response
+  Future<void> regenerateResponse(String messageId) async {
+    if (!mounted) return;
+    
+    final chatRepository = _ref.read(chatRepositoryProvider);
+    final selectedModel = _ref.read(selectedModelProvider);
+    
+    // Find the message and get the previous user message
+    final messageIndex = state.messages.indexWhere((m) => m.id == messageId);
+    if (messageIndex == -1 || messageIndex == 0) return;
+    
+    final userMessage = state.messages[messageIndex - 1];
+    if (userMessage.isUserMessage) {
+      // Remove the old AI response and add loading state
+      final messagesWithoutOldResponse = state.messages.take(messageIndex).toList();
+      
+      state = state.copyWith(
+        messages: messagesWithoutOldResponse,
+        isAiTyping: true,
+        isLoading: true,
+      );
+      
+      try {
+        // Get new AI response
+        final response = await chatRepository.getMockResponse(userMessage.content, selectedModel);
+        final newAiMessage = ChatMessage.ai(response);
+        
+        final finalMessages = [...messagesWithoutOldResponse, newAiMessage];
+        
+        if (!mounted) return;
+        
+        state = state.copyWith(
+          messages: finalMessages,
+          isAiTyping: false,
+          isLoading: false,
+        );
+        
+        // Update conversation
+        final activeConversationId = _ref.read(activeConversationProvider);
+        if (activeConversationId != null) {
+          final conversations = _ref.read(conversationsProvider);
+          final conversation = conversations.where((c) => c.id == activeConversationId).firstOrNull;
+          if (conversation != null) {
+            final updatedConversation = conversation.copyWith(
+              messages: finalMessages,
+              lastUpdated: DateTime.now(),
+            );
+            _ref.read(conversationsProvider.notifier).updateConversation(activeConversationId, updatedConversation);
+          }
+        }
+      } catch (e) {
+        if (!mounted) return;
+        
+        state = state.copyWith(
+          isAiTyping: false,
+          isLoading: false,
+          error: e.toString(),
+        );
+      }
+    }
+  }
 }
 
 class ConversationsNotifier extends StateNotifier<List<Conversation>> {

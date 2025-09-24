@@ -19,7 +19,7 @@ class NewChatHeader extends ConsumerWidget {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 8.0), // ✅ Reduced padding to move closer to top
+        padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 8.0), // ✅ Reduced padding to move closer to top
         child: GlassmorphicContainer(
           borderRadius: 20.0,
           blurIntensity: 15.0,

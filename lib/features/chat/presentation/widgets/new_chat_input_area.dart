@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/glassmorphic_container.dart';
+import '../../../../core/providers/chat_provider.dart';
+import '../../../../core/widgets/orbital_loading_animation.dart';
 
-class NewChatInputArea extends StatelessWidget {
+class NewChatInputArea extends ConsumerWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
   final bool isLoading;
@@ -16,22 +18,45 @@ class NewChatInputArea extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final localizations = AppLocalizations.of(context)!;
+    final selectedModel = ref.watch(selectedModelProvider);
+
+    // ✅ Generate localized placeholder text based on selected model
+    String getPlaceholderText() {
+      final locale = Localizations.localeOf(context).languageCode;
+      
+      switch (locale) {
+        case 'en':
+          return 'Ask ${selectedModel.name} anything...';
+        case 'tr':
+          return '${selectedModel.name}\'e sor...';
+        case 'ar':
+          return 'اسأل ${selectedModel.name} أي شيء...';
+        case 'ru':
+          return 'Спросите ${selectedModel.name} о чем угодно...';
+        default:
+          return 'Ask ${selectedModel.name} anything...';
+      }
+    }
 
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 4.0), // ✅ Reduced padding to move closer to bottom
+        padding: const EdgeInsets.fromLTRB(18.0, 8.0, 18.0, 0.0), // ✅ Reduced padding
         child: Column(
-          mainAxisSize: MainAxisSize.min, // ✅ Ensure minimal height
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // ✅ Glassmorphic input container
-            GlassmorphicContainer(
-              borderRadius: 30.0, // ✅ Capsule shape
-              blurIntensity: 15.0,
-              backgroundColor: Colors.black.withOpacity(0.25), // ✅ Glassmorphism effect
-              borderColor: Colors.white.withOpacity(0.15),
+            // ✅ Simple input container without glassmorphism
+            Container(
+              decoration: BoxDecoration(
+                color: AppTheme.darkCard, // ✅ Simple solid background
+                borderRadius: BorderRadius.circular(30.0),
+                border: Border.all(
+                  color: AppTheme.mediumText.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               child: Row(
                 children: [
@@ -42,25 +67,29 @@ class NewChatInputArea extends StatelessWidget {
                       maxLines: null,
                       textCapitalization: TextCapitalization.sentences,
                       style: const TextStyle(
-                        color: AppTheme.lightText,
                         fontSize: 16,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Herhangi bir şey sorun...', // ✅ Turkish placeholder
+                        hintText: getPlaceholderText(), // ✅ Dynamic localized placeholder
                         hintStyle: TextStyle(
                           color: AppTheme.mediumText.withOpacity(0.7),
                           fontSize: 16,
                         ),
-                        border: InputBorder.none, // ✅ Remove default underlines
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
+                          horizontal: 10,
                           vertical: 12,
                         ),
                       ),
                       onSubmitted: (_) => onSend(),
                     ),
                   ),
-                  // ✅ Circular gradient send button (retains vibrant background)
+                  // ✅ Circular gradient send button
                   Container(
                     margin: const EdgeInsets.only(left: 8),
                     child: GestureDetector(
@@ -71,7 +100,7 @@ class NewChatInputArea extends StatelessWidget {
                         decoration: BoxDecoration(
                           gradient: isLoading 
                               ? null
-                              : AppTheme.primaryGradient, // ✅ Vibrant gradient stands out
+                              : AppTheme.primaryGradient,
                           color: isLoading 
                               ? AppTheme.mediumText.withOpacity(0.3)
                               : null,
@@ -80,28 +109,18 @@ class NewChatInputArea extends StatelessWidget {
                             BoxShadow(
                               color: isLoading 
                                   ? Colors.transparent
-                                  : AppTheme.primaryBlue.withOpacity(0.3),
+                                  : AppTheme.primaryBlue.withOpacity(0.6),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
                           ],
                         ),
                         child: isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        AppTheme.lightText,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                            ? const OrbitalLoadingAnimation(
+                                size: 44.0,
+                                satelliteColor: Colors.white,
+                                satelliteSize: 3.0,
+                                duration: Duration(milliseconds: 1000),
                               )
                             : const Icon(
                                 Icons.send,
@@ -114,22 +133,15 @@ class NewChatInputArea extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 6), // ✅ Reduced spacing
-            // Disclaimer with glassmorphic background
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // ✅ Reduced padding
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+            const SizedBox(height: 6),
+            // ✅ Simple disclaimer without background frame
+            Text(
+              localizations.disclaimer,
+              style: TextStyle(
+                color: AppTheme.mediumText.withOpacity(0.6),
+                fontSize: 11,
               ),
-              child: Text(
-                localizations.disclaimer,
-                style: TextStyle(
-                  color: AppTheme.mediumText.withOpacity(0.8),
-                  fontSize: 11,
-                ),
-                textAlign: TextAlign.center,
-              ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),

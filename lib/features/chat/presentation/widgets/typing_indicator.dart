@@ -31,42 +31,58 @@ class _TypingIndicatorState extends State<TypingIndicator>
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // AI Avatar
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: AppTheme.accentPurple,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.smart_toy,
-              color: Colors.white,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Typing bubble
+          // ✅ Thinking process placeholder (collapsed)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppTheme.darkCard,
-              borderRadius: BorderRadius.circular(16).copyWith(
-                bottomLeft: const Radius.circular(4),
+              color: Colors.black.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.1),
+                width: 1,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.yellow.shade400,
+                        Colors.orange.shade400,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome,
+                    color: Colors.white,
+                    size: 12,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Düşünüyor...',
+                  style: TextStyle(
+                    color: AppTheme.mediumText,
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 12),
+          
+          // ✅ Typing indicator (bubble-less)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -75,6 +91,14 @@ class _TypingIndicatorState extends State<TypingIndicator>
                 _buildAnimatedDot(1),
                 const SizedBox(width: 4),
                 _buildAnimatedDot(2),
+                const SizedBox(width: 8),
+                const Text(
+                  'Yanıt yazılıyor...',
+                  style: TextStyle(
+                    color: AppTheme.mediumText,
+                    fontSize: 14,
+                  ),
+                ),
               ],
             ),
           ),

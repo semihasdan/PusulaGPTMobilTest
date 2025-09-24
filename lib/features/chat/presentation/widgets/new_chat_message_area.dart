@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/models/chat_message.dart';
 import '../../../../core/theme/app_theme.dart';
-import 'chat_message_bubble.dart';
+import 'user_prompt_item.dart';
+import 'ai_response_item.dart';
 import 'typing_indicator.dart';
 
 class NewChatMessageArea extends StatelessWidget {
@@ -33,7 +34,7 @@ class NewChatMessageArea extends StatelessWidget {
         controller: scrollController,
         // ✅ Add proper padding to prevent occlusion by floating elements
         padding: const EdgeInsets.only(
-          top: 24,    // ✅ Extra space below floating header
+          top: 50,    // ✅ Extra space below floating header
           bottom: 24, // ✅ Extra space above floating input area
           left: 16,
           right: 16,
@@ -42,7 +43,29 @@ class NewChatMessageArea extends StatelessWidget {
         itemBuilder: (context, index) {
           if (index < messages.length) {
             final message = messages[index];
-            return ChatMessageBubble(message: message);
+            
+            // ✅ Robust message type checking with null safety
+            if (message.isUserMessage == true) {
+              return UserPromptItem(
+                key: ValueKey('user_${message.id}'),
+                message: message,
+              );
+            } else if (message.isUserMessage == false) {
+              return AIResponseItem(
+                key: ValueKey('ai_${message.id}'),
+                message: message,
+              );
+            } else {
+              // ✅ Fallback for any edge cases
+              return Container(
+                key: ValueKey('error_${message.id}'),
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Error: Invalid message type for message: "${message.content}"',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              );
+            }
           } else {
             // Show typing indicator at the end
             return const TypingIndicator();

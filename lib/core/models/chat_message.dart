@@ -1,9 +1,13 @@
+enum FeedbackState { none, liked, disliked }
+
 class ChatMessage {
   final String id;
   final String content;
   final bool isUserMessage;
   final DateTime timestamp;
   final bool isLoading;
+  final FeedbackState feedbackState;
+  final String? thinkingProcess;
 
   ChatMessage({
     required this.id,
@@ -11,6 +15,8 @@ class ChatMessage {
     required this.isUserMessage,
     required this.timestamp,
     this.isLoading = false,
+    this.feedbackState = FeedbackState.none,
+    this.thinkingProcess,
   });
 
   factory ChatMessage.user(String content) {
@@ -47,6 +53,8 @@ class ChatMessage {
     bool? isUserMessage,
     DateTime? timestamp,
     bool? isLoading,
+    FeedbackState? feedbackState,
+    String? thinkingProcess,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -54,6 +62,8 @@ class ChatMessage {
       isUserMessage: isUserMessage ?? this.isUserMessage,
       timestamp: timestamp ?? this.timestamp,
       isLoading: isLoading ?? this.isLoading,
+      feedbackState: feedbackState ?? this.feedbackState,
+      thinkingProcess: thinkingProcess ?? this.thinkingProcess,
     );
   }
 }
