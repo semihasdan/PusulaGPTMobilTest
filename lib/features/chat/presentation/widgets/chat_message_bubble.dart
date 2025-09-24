@@ -38,7 +38,7 @@ class ChatMessageBubble extends StatelessWidget {
               decoration: BoxDecoration(
                 color: message.isUserMessage 
                     ? AppTheme.primaryBlue 
-                    : AppTheme.darkCard,
+                    : AppTheme.darkCard.withOpacity(0.9), // ✅ Slightly transparent for better layering
                 borderRadius: BorderRadius.circular(16).copyWith(
                   bottomLeft: message.isUserMessage 
                       ? const Radius.circular(16) 
@@ -49,11 +49,17 @@ class ChatMessageBubble extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
+                    color: Colors.black.withOpacity(0.2), // ✅ Stronger shadow for better contrast
+                    blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
                 ],
+                border: message.isUserMessage 
+                    ? null 
+                    : Border.all(
+                        color: AppTheme.mediumText.withOpacity(0.1),
+                        width: 1,
+                      ),
               ),
               child: Text(
                 message.content,

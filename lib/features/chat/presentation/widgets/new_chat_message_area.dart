@@ -27,18 +27,17 @@ class NewChatMessageArea extends StatelessWidget {
 
     return Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppTheme.darkBg,
-            Color(0xFF0F172A),
-          ],
-        ),
+        color: Colors.transparent, // ✅ Make transparent to show animated background
       ),
       child: ListView.builder(
         controller: scrollController,
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        // ✅ Add proper padding to prevent occlusion by floating elements
+        padding: const EdgeInsets.only(
+          top: 24,    // ✅ Extra space below floating header
+          bottom: 24, // ✅ Extra space above floating input area
+          left: 16,
+          right: 16,
+        ),
         itemCount: messages.length + (isAiTyping ? 1 : 0),
         itemBuilder: (context, index) {
           if (index < messages.length) {
@@ -56,50 +55,65 @@ class NewChatMessageArea extends StatelessWidget {
   Widget _buildWelcomeMessage(BuildContext context, AppLocalizations localizations) {
     return Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppTheme.darkBg,
-            Color(0xFF0F172A),
-          ],
-        ),
+        color: Colors.transparent, // ✅ Transparent to show animated background
       ),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // ✅ Glassmorphic welcome card
             Container(
-              width: 80,
-              height: 80,
+              padding: const EdgeInsets.all(32),
+              margin: const EdgeInsets.symmetric(horizontal: 24),
               decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
-                borderRadius: BorderRadius.circular(40),
+                color: Colors.black.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.1),
+                  width: 1,
+                ),
               ),
-              child: const Icon(
-                Icons.chat_bubble_outline,
-                color: Colors.white,
-                size: 40,
+              child: Column(
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      gradient: AppTheme.primaryGradient,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryBlue.withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.chat_bubble_outline,
+                      color: Colors.white,
+                      size: 40,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    localizations.helloUser.replaceAll('{email}', 'user@example.com'),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppTheme.lightText,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    localizations.howCanHelp,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppTheme.mediumText,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              localizations.helloUser.replaceAll('{email}', 'user@example.com'), // TODO: Get from auth
-              style: const TextStyle(
-                color: AppTheme.lightText,
-                fontSize: 28,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              localizations.howCanHelp,
-              style: const TextStyle(
-                color: AppTheme.mediumText,
-                fontSize: 18,
-              ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),

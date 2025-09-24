@@ -10,7 +10,7 @@ final chatRepositoryProvider = Provider<ChatRepository>((ref) {
 });
 
 final selectedModelProvider = StateNotifierProvider<SelectedModelNotifier, AiModel>((ref) {
-  return SelectedModelNotifier();
+  return SelectedModelNotifier(ref);
 });
 
 final chatProvider = StateNotifierProvider<ChatNotifier, ChatState>((ref) {
@@ -30,10 +30,26 @@ final chatHistoryProvider = StateNotifierProvider<ChatHistoryNotifier, List<Chat
 });
 
 class SelectedModelNotifier extends StateNotifier<AiModel> {
-  SelectedModelNotifier() : super(AiModel.availableModels.first);
+  final Ref _ref;
+  
+  SelectedModelNotifier(this._ref) : super(AiModel.availableModels.first);
 
   void selectModel(AiModel model) {
     state = model;
+  }
+
+  // ✅ Intelligent model switching with new chat creation
+  void switchModel(AiModel newModel) {
+    final currentModel = state;
+    final activeConversationId = _ref.read(activeConversationProvider);
+    
+    // If switching models and there's an active conversation, create new chat
+    if (newModel.id != currentModel.id && activeConversationId != null) {
+      _ref.read(chatProvider.notifier).createNewChatWithModel(newModel);
+    } else {
+      // Just switch the model if no active conversation
+      selectModel(newModel);
+    }
   }
 }
 
@@ -84,17 +100,19 @@ class ChatNotifier extends StateNotifier<ChatState> {
         if (conversation != null) {
           final updatedConversation = conversation.copyWith(
             messages: finalMessages,
-            timestamp: DateTime.now(),
+            lastUpdated: DateTime.now(), // ✅ Update lastUpdated for recency sorting
           );
           _ref.read(conversationsProvider.notifier).updateConversation(activeConversationId, updatedConversation);
         }
       } else {
-        // Create new conversation
+        // ✅ Create new conversation with current model
         final newConversation = Conversation(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           title: content.length > 30 ? '${content.substring(0, 30)}...' : content,
           timestamp: DateTime.now(),
+          lastUpdated: DateTime.now(),
           messages: finalMessages,
+          modelUsed: selectedModel, // ✅ Track which model was used
         );
         _ref.read(conversationsProvider.notifier).addConversation(newConversation);
         _ref.read(activeConversationProvider.notifier).setActiveConversation(newConversation.id);
@@ -114,6 +132,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
   }
 
+  // ✅ Enhanced conversation loading with automatic model reversion
   void loadConversation(String conversationId) {
     if (!mounted) return;
     
@@ -122,7 +141,20 @@ class ChatNotifier extends StateNotifier<ChatState> {
     if (conversation != null) {
       state = ChatState(messages: conversation.messages);
       _ref.read(activeConversationProvider.notifier).setActiveConversation(conversationId);
+      
+      // ✅ Automatically revert to the conversation's original model
+      _ref.read(selectedModelProvider.notifier).selectModel(conversation.modelUsed);
     }
+  }
+
+  // ✅ Create new chat when model is switched mid-conversation
+  void createNewChatWithModel(AiModel newModel) {
+    if (!mounted) return;
+    
+    // Clear current chat and set new model
+    state = const ChatState.initial();
+    _ref.read(activeConversationProvider.notifier).clearActiveConversation();
+    _ref.read(selectedModelProvider.notifier).selectModel(newModel);
   }
 
   void clearMessages() {
@@ -134,14 +166,19 @@ class ChatNotifier extends StateNotifier<ChatState> {
 }
 
 class ConversationsNotifier extends StateNotifier<List<Conversation>> {
-  ConversationsNotifier() : super(_mockConversations);
+  // ✅ Start with empty list instead of mock data
+  ConversationsNotifier() : super([]);
 
   void addConversation(Conversation conversation) {
-    state = [conversation, ...state];
+    // ✅ Add and sort by recency
+    final updatedList = [conversation, ...state];
+    state = _sortByRecency(updatedList);
   }
 
   void updateConversation(String id, Conversation updatedConversation) {
-    state = state.map((conv) => conv.id == id ? updatedConversation : conv).toList();
+    final updatedList = state.map((conv) => conv.id == id ? updatedConversation : conv).toList();
+    // ✅ Re-sort after update to maintain recency order
+    state = _sortByRecency(updatedList);
   }
 
   void removeConversation(String id) {
@@ -156,32 +193,15 @@ class ConversationsNotifier extends StateNotifier<List<Conversation>> {
     }
   }
 
-  static final List<Conversation> _mockConversations = [
-    Conversation(
-      id: '1',
-      title: 'General Health Consultation',
-      timestamp: DateTime.now().subtract(const Duration(hours: 21)),
-      messages: [],
-    ),
-    Conversation(
-      id: '2',
-      title: 'Diabetes Management',
-      timestamp: DateTime.now().subtract(const Duration(days: 3)),
-      messages: [],
-    ),
-    Conversation(
-      id: '3',
-      title: 'Emergency Symptoms',
-      timestamp: DateTime.now().subtract(const Duration(days: 5)),
-      messages: [],
-    ),
-    Conversation(
-      id: '4',
-      title: 'Medication Questions',
-      timestamp: DateTime.now().subtract(const Duration(days: 14)),
-      messages: [],
-    ),
-  ];
+  // ✅ Dynamic recency sorting - most recent first
+  List<Conversation> _sortByRecency(List<Conversation> conversations) {
+    final sorted = [...conversations];
+    sorted.sort((a, b) => b.lastUpdated.compareTo(a.lastUpdated));
+    return sorted;
+  }
+
+  // ✅ Getter for sorted conversations (always returns sorted list)
+  List<Conversation> get sortedConversations => _sortByRecency(state);
 }
 
 class ActiveConversationNotifier extends StateNotifier<String?> {
@@ -197,7 +217,8 @@ class ActiveConversationNotifier extends StateNotifier<String?> {
 }
 
 class ChatHistoryNotifier extends StateNotifier<List<ChatSession>> {
-  ChatHistoryNotifier() : super(_mockChatHistory);
+  // ✅ Start with empty list instead of mock data
+  ChatHistoryNotifier() : super([]);
 
   void addSession(ChatSession session) {
     state = [session, ...state];
@@ -206,37 +227,6 @@ class ChatHistoryNotifier extends StateNotifier<List<ChatSession>> {
   void removeSession(String sessionId) {
     state = state.where((session) => session.id != sessionId).toList();
   }
-
-  static final List<ChatSession> _mockChatHistory = [
-    ChatSession(
-      id: '1',
-      title: 'General Health Consultation',
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      lastMessageAt: DateTime.now().subtract(const Duration(days: 1)),
-      messages: [],
-    ),
-    ChatSession(
-      id: '2',
-      title: 'Diabetes Management',
-      createdAt: DateTime.now().subtract(const Duration(days: 3)),
-      lastMessageAt: DateTime.now().subtract(const Duration(days: 3)),
-      messages: [],
-    ),
-    ChatSession(
-      id: '3',
-      title: 'Emergency Symptoms',
-      createdAt: DateTime.now().subtract(const Duration(days: 7)),
-      lastMessageAt: DateTime.now().subtract(const Duration(days: 7)),
-      messages: [],
-    ),
-    ChatSession(
-      id: '4',
-      title: 'Medication Questions',
-      createdAt: DateTime.now().subtract(const Duration(days: 14)),
-      lastMessageAt: DateTime.now().subtract(const Duration(days: 14)),
-      messages: [],
-    ),
-  ];
 }
 
 class ChatState {

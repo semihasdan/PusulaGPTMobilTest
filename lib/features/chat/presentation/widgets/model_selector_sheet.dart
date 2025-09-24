@@ -172,7 +172,8 @@ class ModelSelectorSheet extends ConsumerWidget {
                   )
                 : null,
             onTap: () {
-              ref.read(selectedModelProvider.notifier).selectModel(model);
+              // ✅ Use intelligent model switching
+              ref.read(selectedModelProvider.notifier).switchModel(model);
               Navigator.of(context).pop();
             },
           ),

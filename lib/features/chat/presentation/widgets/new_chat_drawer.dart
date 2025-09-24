@@ -18,7 +18,8 @@ class NewChatDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedModel = ref.watch(selectedModelProvider);
-    final conversations = ref.watch(conversationsProvider);
+    final conversationsNotifier = ref.watch(conversationsProvider.notifier);
+    final conversations = conversationsNotifier.sortedConversations; // ✅ Use sorted conversations
     final activeConversationId = ref.watch(activeConversationProvider);
     final localizations = AppLocalizations.of(context)!;
 
@@ -191,7 +192,7 @@ class NewChatDrawer extends ConsumerWidget {
               overflow: TextOverflow.ellipsis,
             ),
             subtitle: Text(
-              timeago.format(conversation.timestamp),
+              timeago.format(conversation.lastUpdated), // ✅ Use lastUpdated for recency
               style: TextStyle(
                 color: AppTheme.mediumText.withOpacity(0.8),
                 fontSize: 12,

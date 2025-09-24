@@ -6,6 +6,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/chat_provider.dart';
 import '../../../../core/providers/language_provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/animated_gradient_background.dart';
 import '../widgets/new_chat_drawer.dart';
 import '../widgets/new_chat_header.dart';
 import '../widgets/new_chat_message_area.dart';
@@ -142,26 +143,50 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
     });
 
     return Scaffold(
-      backgroundColor: AppTheme.darkBg,
       resizeToAvoidBottomInset: true,
       drawer: NewChatDrawer(
         onLanguageSettings: _showLanguageDialog,
         onLogout: _logout,
       ),
-      body: Column(
+      // ✅ Stack layout with floating glassmorphic elements
+      body: Stack(
         children: [
-          NewChatHeader(onModelSelectorTap: _showModelSelector),
-          Expanded(
-            child: NewChatMessageArea(
-              messages: chatState.messages,
-              scrollController: _scrollController,
-              isAiTyping: chatState.isAiTyping,
+          // ✅ Animated gradient background as base layer
+          const AnimatedGradientBackground(),
+          
+          // ✅ Message area with optimized padding for floating elements
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.only(
+                top: 90,  // ✅ Reduced to account for closer header positioning
+                bottom: 130, // ✅ Reduced to account for closer input positioning
+              ),
+              child: NewChatMessageArea(
+                messages: chatState.messages,
+                scrollController: _scrollController,
+                isAiTyping: chatState.isAiTyping,
+              ),
             ),
           ),
-          NewChatInputArea(
-            controller: _messageController,
-            onSend: _sendMessage,
-            isLoading: chatState.isLoading,
+          
+          // ✅ Floating glassmorphic header at top
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: NewChatHeader(onModelSelectorTap: _showModelSelector),
+          ),
+          
+          // ✅ Floating glassmorphic input area at bottom
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: NewChatInputArea(
+              controller: _messageController,
+              onSend: _sendMessage,
+              isLoading: chatState.isLoading,
+            ),
           ),
         ],
       ),
