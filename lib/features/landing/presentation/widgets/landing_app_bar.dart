@@ -37,8 +37,8 @@ class LandingAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.asset(
-                    'assets/images/ai.png',
-                    fit: BoxFit.cover,
+                    'assets/logo/psl-logo.png', // Updated to use official logo
+                    fit: BoxFit.contain, // Changed to contain to preserve logo aspect ratio
                     errorBuilder: (context, error, stackTrace) {
                       // Fallback to gradient container
                       return Container(

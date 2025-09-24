@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/gradient_text.dart';
 
 class AiModelsSection extends StatefulWidget {
@@ -18,28 +17,22 @@ class _AiModelsSectionState extends State<AiModelsSection> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    final size = MediaQuery.of(context).size;
-    final isSmallScreen = size.width < 600;
 
     final models = [
       {
         'title': localizations.pusulaGpt,
         'description': localizations.pusulaDescription,
-        'icon': 'P',
-        'color': '#020101ff',
-        'background': 'assets/logo/pusula_logo.png',
+        'logo': 'assets/logo/pusula_logo.png',
       },
       {
         'title': localizations.comedGpt,
         'description': localizations.comedDescription,
-        'icon': 'C',
-        'color': AppTheme.emerald,
+        'logo': 'assets/logo/comed_logo.png',
       },
       {
         'title': localizations.medDiabet,
         'description': localizations.diabetDescription,
-        'icon': 'M',
-        'color': AppTheme.rose,
+        'logo': 'assets/logo/med_diyabet_logo.png',
       },
     ];
 
@@ -52,29 +45,17 @@ class _AiModelsSectionState extends State<AiModelsSection> {
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 48),
-          isSmallScreen
-              ? Column(
-                  children: models
-                      .asMap()
-                      .entries
-                      .map((entry) => Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: _buildModelCard(entry.value, entry.key),
-                          ))
-                      .toList(),
-                )
-              : Row(
-                  children: models
-                      .asMap()
-                      .entries
-                      .map((entry) => Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              child: _buildModelCard(entry.value, entry.key),
-                            ),
-                          ))
-                      .toList(),
-                ),
+          // Vertically stacked model cards using Column
+          Column(
+            children: models
+                .asMap()
+                .entries
+                .map((entry) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12.0),
+                      child: _buildModelCard(entry.value, entry.key),
+                    ))
+                .toList(),
+          ),
         ],
       ),
     );
@@ -90,63 +71,65 @@ class _AiModelsSectionState extends State<AiModelsSection> {
         onTapDown: (_) => setState(() => _hoveredIndex = index),
         onTapUp: (_) => setState(() => _hoveredIndex = -1),
         onTapCancel: () => setState(() => _hoveredIndex = -1),
-        child: GlassCard(
-          height: 200,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24.0),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E2025), // Dark solid background
+            borderRadius: BorderRadius.circular(20.0), // Soft rounded corners
+            border: Border.all(
+              color: AppTheme.mediumText.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: AppTheme.darkCard,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppTheme.mediumText.withOpacity(0.2),
-                    width: 1,
-                  ),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.asset(
-                    _getLogoPath(model['title']),
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      // Fallback to gradient container with letter
-                      return Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [model['color'], AppTheme.accentPurple],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Center(
-                          child: Text(
-                            model['icon'],
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+              // Logo with bottom padding
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Image.asset(
+                  model['logo'],
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    // Fallback to a simple icon if logo fails to load
+                    return Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: AppTheme.darkCard,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.smart_toy,
+                        color: AppTheme.lightText,
+                        size: 40,
+                      ),
+                    );
+                  },
                 ),
               ),
-              const SizedBox(height: 16),
+              // Model name - bold and bright white
               Text(
                 model['title'],
-                style: Theme.of(context).textTheme.titleLarge,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
+              // Model description - normal weight and dimmer color
               Text(
                 model['description'],
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.normal,
+                ),
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -155,22 +138,11 @@ class _AiModelsSectionState extends State<AiModelsSection> {
           ),
         )
             .animate(target: isHovered ? 1 : 0)
-            .scale(begin: const Offset(1, 1), end: const Offset(1.05, 1.05))
-            .moveY(begin: 0, end: -8),
+            .scale(begin: const Offset(1, 1), end: const Offset(1.02, 1.02))
+            .moveY(begin: 0, end: -4),
       ),
     );
   }
 
-  String _getLogoPath(String? title) {
-    switch (title) {
-      case 'PusulaGPT':
-        return 'assets/logo/pusula_logo.png';
-      case 'ComedGPT':
-        return 'assets/logo/comed_logo.png';
-      case 'MedDiabet':
-        return 'assets/logo/med_diyabet_logo.png';
-      default:
-        return 'assets/logo/pusula_logo.png';
-    }
-  }
+
 }

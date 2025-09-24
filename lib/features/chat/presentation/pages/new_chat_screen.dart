@@ -33,22 +33,31 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
   void _sendMessage() {
     final message = _messageController.text.trim();
     if (message.isNotEmpty) {
-      ref.read(chatProvider.notifier).sendMessage(message);
+      // Clear the controller immediately to ensure UI responsiveness
       _messageController.clear();
-      _scrollToBottom();
+      
+      // Send the message
+      ref.read(chatProvider.notifier).sendMessage(message);
+      
+      // Scroll to bottom after a short delay to ensure message is rendered
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _scrollToBottom();
+      });
     }
   }
 
   void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
+    if (_scrollController.hasClients) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
   }
 
   void _showModelSelector() {
@@ -114,11 +123,21 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
   Widget build(BuildContext context) {
     final chatState = ref.watch(chatProvider);
 
-    // Auto-scroll when new messages are added
+    // Auto-scroll when new messages are added or typing state changes
     ref.listen<ChatState>(chatProvider, (previous, next) {
-      if (previous != null && 
-          previous.messages.length < next.messages.length) {
-        _scrollToBottom();
+      if (previous != null) {
+        // Scroll when new messages are added
+        if (previous.messages.length < next.messages.length) {
+          Future.delayed(const Duration(milliseconds: 200), () {
+            _scrollToBottom();
+          });
+        }
+        // Scroll when typing indicator appears or disappears
+        else if (previous.isAiTyping != next.isAiTyping) {
+          Future.delayed(const Duration(milliseconds: 100), () {
+            _scrollToBottom();
+          });
+        }
       }
     });
 
@@ -136,6 +155,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
             child: NewChatMessageArea(
               messages: chatState.messages,
               scrollController: _scrollController,
+              isAiTyping: chatState.isAiTyping,
             ),
           ),
           NewChatInputArea(

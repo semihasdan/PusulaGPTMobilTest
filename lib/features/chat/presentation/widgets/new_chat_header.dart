@@ -15,7 +15,6 @@ class NewChatHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedModel = ref.watch(selectedModelProvider);
-    final localizations = AppLocalizations.of(context)!;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
@@ -30,96 +29,59 @@ class NewChatHeader extends ConsumerWidget {
       ),
       child: SafeArea(
         bottom: false,
-        child: Column(
+        child: Row(
           children: [
-            // Top Row - Main interactive row
-            Row(
-              children: [
-                // Menu button
-                Builder(
-                  builder: (context) => IconButton(
-                    icon: const Icon(Icons.menu, color: AppTheme.lightText),
-                    onPressed: () => Scaffold.of(context).openDrawer(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Model selector
-                Expanded(
-                  child: GestureDetector(
-                    onTap: onModelSelectorTap,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: AppTheme.darkCard.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppTheme.mediumText.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              selectedModel.displayName,
-                              style: const TextStyle(
-                                color: AppTheme.lightText,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const Icon(
-                            Icons.keyboard_arrow_down,
-                            color: AppTheme.mediumText,
-                            size: 20,
-                          ),
-                        ],
-                      ),
+            // Menu button
+            Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu, color: AppTheme.lightText),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Model selector
+            Expanded(
+              child: GestureDetector(
+                onTap: onModelSelectorTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.darkCard.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppTheme.mediumText.withOpacity(0.2),
+                      width: 1,
                     ),
                   ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          selectedModel.displayName,
+                          style: const TextStyle(
+                            color: AppTheme.lightText,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Icon(
+                        Icons.keyboard_arrow_down,
+                        color: AppTheme.mediumText,
+                        size: 20,
+                      ),
+                    ],
+                  ),
                 ),
-                // Spacer for balance
-                const SizedBox(width: 48),
-              ],
+              ),
             ),
-            const SizedBox(height: 8),
-            // Bottom Row - User tags with wrap support
-            Wrap(
-              spacing: 8.0,
-              runSpacing: 4.0,
-              children: [
-                _buildTag(localizations.administrator, AppTheme.primaryBlue),
-                _buildTag(localizations.premium, AppTheme.accentPurple),
-                _buildTag(localizations.unlimited, AppTheme.emerald),
-              ],
-            ),
+            const SizedBox(width: 16),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTag(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
+
 }

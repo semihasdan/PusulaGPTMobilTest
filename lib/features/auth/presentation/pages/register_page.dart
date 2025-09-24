@@ -66,6 +66,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           children: [
             const AnimatedBackground(),
             SingleChildScrollView(
+              physics: const ClampingScrollPhysics(), // ✅ Modern, platform-consistent scrolling
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
@@ -75,6 +76,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   const SizedBox(height: 32),
                   // Registration form
                   _buildRegistrationForm(localizations, authState),
+                  const SizedBox(height: 24), // ✅ Add bottom padding for better UX
                 ],
               ),
             ),
@@ -114,6 +116,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       },
     ];
 
+    // ✅ Responsive layout based on screen width
+    final screenWidth = MediaQuery.of(context).size.width;
+    final crossAxisCount = screenWidth < 400 ? 1 : 2; // Single column on very small screens
+    final childAspectRatio = screenWidth < 400 ? 2.5 : 1.0; // Wider cards on single column
+
     return Column(
       children: [
         Text(
@@ -124,54 +131,61 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: 1.2,
+            childAspectRatio: childAspectRatio,
           ),
           itemCount: features.length,
           itemBuilder: (context, index) {
             final feature = features[index];
             return GlassCard(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      gradient: AppTheme.primaryGradient,
-                      borderRadius: BorderRadius.circular(10),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0), // Add padding to prevent edge overflow
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 36, // Slightly smaller icon container
+                      height: 36,
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.primaryGradient,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        feature['icon'] as IconData,
+                        color: Colors.white,
+                        size: 18, // Slightly smaller icon
+                      ),
                     ),
-                    child: Icon(
-                      feature['icon'] as IconData,
-                      color: Colors.white,
-                      size: 20,
+                    const SizedBox(height: 8),
+                    Text(
+                      feature['title'] as String,
+                      style: const TextStyle(
+                        color: AppTheme.lightText,
+                        fontSize: 13, // Slightly smaller font
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2, // Allow title to wrap if needed
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    feature['title'] as String,
-                    style: const TextStyle(
-                      color: AppTheme.lightText,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 4),
+                    Flexible( // ✅ KEY FIX: Make description flexible
+                      child: Text(
+                        feature['description'] as String,
+                        style: const TextStyle(
+                          color: AppTheme.mediumText,
+                          fontSize: 11, // Smaller font for description
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 3, // Allow more lines for description
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    feature['description'] as String,
-                    style: const TextStyle(
-                      color: AppTheme.mediumText,
-                      fontSize: 12,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },

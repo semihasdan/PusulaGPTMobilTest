@@ -3,15 +3,18 @@ import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/models/chat_message.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'chat_message_bubble.dart';
+import 'typing_indicator.dart';
 
 class NewChatMessageArea extends StatelessWidget {
   final List<ChatMessage> messages;
   final ScrollController scrollController;
+  final bool isAiTyping;
 
   const NewChatMessageArea({
     super.key,
     required this.messages,
     required this.scrollController,
+    this.isAiTyping = false,
   });
 
   @override
@@ -36,10 +39,15 @@ class NewChatMessageArea extends StatelessWidget {
       child: ListView.builder(
         controller: scrollController,
         padding: const EdgeInsets.symmetric(vertical: 16),
-        itemCount: messages.length,
+        itemCount: messages.length + (isAiTyping ? 1 : 0),
         itemBuilder: (context, index) {
-          final message = messages[index];
-          return ChatMessageBubble(message: message);
+          if (index < messages.length) {
+            final message = messages[index];
+            return ChatMessageBubble(message: message);
+          } else {
+            // Show typing indicator at the end
+            return const TypingIndicator();
+          }
         },
       ),
     );

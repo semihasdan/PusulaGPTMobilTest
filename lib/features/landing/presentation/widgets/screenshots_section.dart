@@ -24,7 +24,7 @@ class _ScreenshotsSectionState extends State<ScreenshotsSection> {
       {
         'title': localizations.comedDashboard,
         'description': localizations.comedDashboardDesc,
-        'image': 'assets/images/comed_screenshot.png',
+        'image': 'assets/images/comed_screenshot.png', // Fixed path
       },
       {
         'title': localizations.diabetAnalytics,
@@ -49,31 +49,88 @@ class _ScreenshotsSectionState extends State<ScreenshotsSection> {
           const SizedBox(height: 48),
           // Main image display
           GlassCard(
-            height: 300,
+            height: 400,
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                gradient: AppTheme.backgroundGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Stack(
                   children: [
-                    Icon(
-                      Icons.image,
-                      size: 80,
-                      color: AppTheme.mediumText.withOpacity(0.5),
+                    // Screenshot image
+                    Image.asset(
+                      _getScreenshots(localizations)[_selectedIndex]['image']!,
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        // Fallback UI if image fails to load
+                        return Container(
+                          width: double.infinity,
+                          height: double.infinity,
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.backgroundGradient,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.image_not_supported,
+                                  size: 80,
+                                  color: AppTheme.mediumText.withOpacity(0.5),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Image not found',
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      _getScreenshots(localizations)[_selectedIndex]['title']!,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _getScreenshots(localizations)[_selectedIndex]['description']!,
-                      style: Theme.of(context).textTheme.bodyMedium,
+                    // Overlay with title and description
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.8),
+                            ],
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _getScreenshots(localizations)[_selectedIndex]['title']!,
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _getScreenshots(localizations)[_selectedIndex]['description']!,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.white.withOpacity(0.9),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),

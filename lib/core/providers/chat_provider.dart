@@ -14,11 +14,7 @@ final selectedModelProvider = StateNotifierProvider<SelectedModelNotifier, AiMod
 });
 
 final chatProvider = StateNotifierProvider<ChatNotifier, ChatState>((ref) {
-  final chatRepository = ref.watch(chatRepositoryProvider);
-  final selectedModel = ref.watch(selectedModelProvider);
-  final activeConversationId = ref.watch(activeConversationProvider);
-  final conversations = ref.watch(conversationsProvider);
-  return ChatNotifier(chatRepository, selectedModel, activeConversationId, conversations, ref);
+  return ChatNotifier(ref);
 });
 
 final conversationsProvider = StateNotifierProvider<ConversationsNotifier, List<Conversation>>((ref) {
@@ -42,60 +38,55 @@ class SelectedModelNotifier extends StateNotifier<AiModel> {
 }
 
 class ChatNotifier extends StateNotifier<ChatState> {
-  final ChatRepository _chatRepository;
-  final AiModel _selectedModel;
-  final String? _activeConversationId;
-  final List<Conversation> _conversations;
   final Ref _ref;
 
-  ChatNotifier(this._chatRepository, this._selectedModel, this._activeConversationId, this._conversations, this._ref) 
-      : super(_getInitialState(_activeConversationId, _conversations));
-
-  static ChatState _getInitialState(String? activeConversationId, List<Conversation> conversations) {
-    if (activeConversationId != null) {
-      final conversation = conversations.where((c) => c.id == activeConversationId).firstOrNull;
-      if (conversation != null) {
-        return ChatState(messages: conversation.messages);
-      }
-    }
-    return const ChatState.initial();
-  }
+  ChatNotifier(this._ref) : super(const ChatState.initial());
 
   Future<void> sendMessage(String content) async {
-    if (content.trim().isEmpty) return;
+    if (content.trim().isEmpty || !mounted) return;
 
-    // Add user message
+    final chatRepository = _ref.read(chatRepositoryProvider);
+    final selectedModel = _ref.read(selectedModelProvider);
+    final activeConversationId = _ref.read(activeConversationProvider);
+    final conversations = _ref.read(conversationsProvider);
+
+    // Add user message and start AI typing
     final userMessage = ChatMessage.user(content.trim());
     final updatedMessages = [...state.messages, userMessage];
     
-    // Add loading indicator
-    final loadingMessage = ChatMessage.loading();
+    if (!mounted) return;
+    
     state = state.copyWith(
-      messages: [...updatedMessages, loadingMessage],
+      messages: updatedMessages,
+      isAiTyping: true,
       isLoading: true,
     );
 
     try {
       // Get AI response
-      final response = await _chatRepository.getMockResponse(content, _selectedModel);
+      final response = await chatRepository.getMockResponse(content, selectedModel);
       final aiMessage = ChatMessage.ai(response);
 
-      // Remove loading indicator and add AI response
+      // Add AI response and stop typing
       final finalMessages = [...updatedMessages, aiMessage];
+      
+      if (!mounted) return;
+      
       state = state.copyWith(
         messages: finalMessages,
+        isAiTyping: false,
         isLoading: false,
       );
 
       // Update conversation in provider
-      if (_activeConversationId != null) {
-        final conversation = _conversations.where((c) => c.id == _activeConversationId).firstOrNull;
+      if (activeConversationId != null) {
+        final conversation = conversations.where((c) => c.id == activeConversationId).firstOrNull;
         if (conversation != null) {
           final updatedConversation = conversation.copyWith(
             messages: finalMessages,
             timestamp: DateTime.now(),
           );
-          _ref.read(conversationsProvider.notifier).updateConversation(_activeConversationId, updatedConversation);
+          _ref.read(conversationsProvider.notifier).updateConversation(activeConversationId, updatedConversation);
         }
       } else {
         // Create new conversation
@@ -109,11 +100,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
         _ref.read(activeConversationProvider.notifier).setActiveConversation(newConversation.id);
       }
     } catch (e) {
-      // Remove loading indicator and show error
+      if (!mounted) return;
+      
+      // Remove typing indicator and show error
       final errorMessage = ChatMessage.ai('Sorry, I encountered an error. Please try again.');
       final finalMessages = [...updatedMessages, errorMessage];
       state = state.copyWith(
         messages: finalMessages,
+        isAiTyping: false,
         isLoading: false,
         error: e.toString(),
       );
@@ -121,7 +115,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
 
   void loadConversation(String conversationId) {
-    final conversation = _conversations.where((c) => c.id == conversationId).firstOrNull;
+    if (!mounted) return;
+    
+    final conversations = _ref.read(conversationsProvider);
+    final conversation = conversations.where((c) => c.id == conversationId).firstOrNull;
     if (conversation != null) {
       state = ChatState(messages: conversation.messages);
       _ref.read(activeConversationProvider.notifier).setActiveConversation(conversationId);
@@ -129,6 +126,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
 
   void clearMessages() {
+    if (!mounted) return;
+    
     state = const ChatState.initial();
     _ref.read(activeConversationProvider.notifier).clearActiveConversation();
   }
@@ -243,11 +242,13 @@ class ChatHistoryNotifier extends StateNotifier<List<ChatSession>> {
 class ChatState {
   final List<ChatMessage> messages;
   final bool isLoading;
+  final bool isAiTyping;
   final String? error;
 
   const ChatState({
     this.messages = const [],
     this.isLoading = false,
+    this.isAiTyping = false,
     this.error,
   });
 
@@ -256,11 +257,13 @@ class ChatState {
   ChatState copyWith({
     List<ChatMessage>? messages,
     bool? isLoading,
+    bool? isAiTyping,
     String? error,
   }) {
     return ChatState(
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
+      isAiTyping: isAiTyping ?? this.isAiTyping,
       error: error ?? this.error,
     );
   }

@@ -90,6 +90,17 @@ class NewChatDrawer extends ConsumerWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
+          const SizedBox(height: 12),
+          // User tags
+          Wrap(
+            spacing: 8.0,
+            runSpacing: 4.0,
+            children: [
+              _buildTag(localizations.administrator, AppTheme.primaryBlue),
+              _buildTag(localizations.premium, AppTheme.accentPurple),
+              _buildTag(localizations.unlimited, AppTheme.emerald),
+            ],
+          ),
         ],
       ),
     );
@@ -327,5 +338,27 @@ class NewChatDrawer extends ConsumerWidget {
       default:
         return AppTheme.primaryGradient;
     }
+  }
+
+  Widget _buildTag(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
   }
 }

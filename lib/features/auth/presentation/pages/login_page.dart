@@ -61,20 +61,35 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     children: [
                       // Logo
                       Container(
-                        width: 80,
-                        height: 80,
+                        width: 92,
+                        height: 92,
                         decoration: BoxDecoration(
-                          gradient: AppTheme.primaryGradient,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Center(
-                          child: Text(
-                            'P',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.asset(
+                            'assets/logo/psl-logo.png', // Updated to use official logo
+                            fit: BoxFit.contain, // Changed to contain to preserve logo aspect ratio
+                            errorBuilder: (context, error, stackTrace) {
+                              // Fallback to gradient container
+                              return Container(
+                                decoration: BoxDecoration(
+                                  gradient: AppTheme.primaryGradient,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'P',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),
