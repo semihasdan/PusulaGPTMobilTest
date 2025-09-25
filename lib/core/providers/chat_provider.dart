@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:io';
+import 'dart:async';
 import '../models/chat_message.dart';
 import '../models/chat_session.dart';
 import '../models/conversation.dart';
@@ -55,6 +57,8 @@ class SelectedModelNotifier extends StateNotifier<AiModel> {
 
 class ChatNotifier extends StateNotifier<ChatState> {
   final Ref _ref;
+  // ✅ Add a flag to prevent duplicate pagination requests
+  bool _isFetchingMoreMessages = false;
 
   ChatNotifier(this._ref) : super(const ChatState.initial());
 
@@ -78,6 +82,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
       isLoading: true,
     );
 
+    // ✅ Store user message in repository
+    if (activeConversationId != null) {
+      chatRepository.addMessage(activeConversationId, userMessage);
+    }
+
     try {
       // Get AI response
       final response = await chatRepository.getMockResponse(content, selectedModel);
@@ -96,6 +105,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       // Update conversation in provider
       if (activeConversationId != null) {
+        // ✅ Store AI message in repository
+        chatRepository.addMessage(activeConversationId, aiMessage);
+        
         final conversation = conversations.where((c) => c.id == activeConversationId).firstOrNull;
         if (conversation != null) {
           final updatedConversation = conversation.copyWith(
@@ -114,6 +126,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
           messages: finalMessages,
           modelUsed: selectedModel, // ✅ Track which model was used
         );
+        // ✅ Store messages in repository for new conversation
+        chatRepository.storeMessages(newConversation.id, finalMessages);
         _ref.read(conversationsProvider.notifier).addConversation(newConversation);
         _ref.read(activeConversationProvider.notifier).setActiveConversation(newConversation.id);
       }
@@ -129,21 +143,153 @@ class ChatNotifier extends StateNotifier<ChatState> {
         isLoading: false,
         error: e.toString(),
       );
+      
+      // ✅ Store error message in repository
+      if (activeConversationId != null) {
+        chatRepository.addMessage(activeConversationId, errorMessage);
+      }
     }
   }
 
-  // ✅ Enhanced conversation loading with automatic model reversion
-  void loadConversation(String conversationId) {
+  // ✅ Load initial messages for a conversation (pagination-aware)
+  Future<void> loadConversation(String conversationId) async {
     if (!mounted) return;
     
     final conversations = _ref.read(conversationsProvider);
     final conversation = conversations.where((c) => c.id == conversationId).firstOrNull;
+    
     if (conversation != null) {
-      state = ChatState(messages: conversation.messages);
       _ref.read(activeConversationProvider.notifier).setActiveConversation(conversationId);
-      
-      // ✅ Automatically revert to the conversation's original model
       _ref.read(selectedModelProvider.notifier).selectModel(conversation.modelUsed);
+      
+      // ✅ Load initial messages with pagination
+      await fetchInitialMessages(conversationId);
+    }
+  }
+
+  // ✅ Fetch initial messages (most recent page)
+  Future<void> fetchInitialMessages(String conversationId) async {
+    if (!mounted) return;
+    
+    state = state.copyWith(
+      isLoadingInitialMessages: true,
+      messages: [],
+      currentPage: 1,
+      hasReachedEndOfHistory: false,
+    );
+    
+    try {
+      final chatRepository = _ref.read(chatRepositoryProvider);
+      final initialMessages = await chatRepository.getMessages(
+        conversationId,
+        page: 1,
+        limit: 20,
+      );
+      
+      if (!mounted) return;
+      
+      state = state.copyWith(
+        messages: initialMessages,
+        isLoadingInitialMessages: false,
+        hasReachedEndOfHistory: initialMessages.length < 20,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      
+      state = state.copyWith(
+        isLoadingInitialMessages: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  // ✅ Fetch more messages (older messages for pagination)
+  Future<void> fetchMoreMessages() async {
+    // ✅ Prevent duplicate requests with improved guarding
+    if (!mounted || state.isLoadingMoreMessages || state.hasReachedEndOfHistory || _isFetchingMoreMessages) {
+      return;
+    }
+    
+    final activeConversationId = _ref.read(activeConversationProvider);
+    if (activeConversationId == null) return;
+    
+    // ✅ Set the flag to prevent duplicate requests
+    _isFetchingMoreMessages = true;
+    state = state.copyWith(isLoadingMoreMessages: true);
+    
+    try {
+      final chatRepository = _ref.read(chatRepositoryProvider);
+      final nextPage = state.currentPage + 1;
+      
+      final moreMessages = await chatRepository.getMessages(
+        activeConversationId,
+        page: nextPage,
+        limit: 20,
+      );
+      
+      if (!mounted) {
+        _isFetchingMoreMessages = false;
+        return;
+      }
+      
+      // ✅ Validate messages to prevent any invalid content
+      final validMessages = moreMessages.where((message) {
+        // ✅ Ensure message has valid content
+        return message.content.isNotEmpty && message.id.isNotEmpty;
+      }).toList();
+      
+      if (moreMessages.isEmpty) {
+        // Reached end of history
+        state = state.copyWith(
+          isLoadingMoreMessages: false,
+          hasReachedEndOfHistory: true,
+        );
+      } else {
+        // Append older messages to the end of the list (they're already in reverse order)
+        final updatedMessages = [...state.messages, ...validMessages];
+        
+        state = state.copyWith(
+          messages: updatedMessages,
+          isLoadingMoreMessages: false,
+          currentPage: nextPage,
+        );
+      }
+    } on SocketException catch (e) {
+      // Handle network errors specifically
+      if (!mounted) {
+        _isFetchingMoreMessages = false;
+        return;
+      }
+      
+      state = state.copyWith(
+        isLoadingMoreMessages: false,
+        error: 'Network error: Please check your connection and try again',
+      );
+    } on TimeoutException catch (e) {
+      // Handle timeout errors
+      if (!mounted) {
+        _isFetchingMoreMessages = false;
+        return;
+      }
+      
+      state = state.copyWith(
+        isLoadingMoreMessages: false,
+        error: 'Request timeout: Please try again',
+      );
+    } catch (e) {
+      // Handle all other errors
+      if (!mounted) {
+        _isFetchingMoreMessages = false;
+        return;
+      }
+      
+      state = state.copyWith(
+        isLoadingMoreMessages: false,
+        error: 'An error occurred: ${e.toString()}',
+      );
+    } finally {
+      // ✅ Always reset the flag
+      _isFetchingMoreMessages = false;
     }
   }
 
@@ -324,27 +470,53 @@ class ChatState {
   final bool isLoading;
   final bool isAiTyping;
   final String? error;
+  // ✅ New pagination-specific state properties
+  final bool isLoadingInitialMessages;
+  final bool isLoadingMoreMessages;
+  final bool hasReachedEndOfHistory;
+  final int currentPage;
 
   const ChatState({
     this.messages = const [],
     this.isLoading = false,
     this.isAiTyping = false,
     this.error,
+    this.isLoadingInitialMessages = false,
+    this.isLoadingMoreMessages = false,
+    this.hasReachedEndOfHistory = false,
+    this.currentPage = 1,
   });
 
-  const ChatState.initial() : this();
+  const ChatState.initial() : this(
+    messages: const [],
+    isLoading: false,
+    isAiTyping: false,
+    error: null,
+    isLoadingInitialMessages: false,
+    isLoadingMoreMessages: false,
+    hasReachedEndOfHistory: false,
+    currentPage: 1,
+  );
 
   ChatState copyWith({
     List<ChatMessage>? messages,
     bool? isLoading,
     bool? isAiTyping,
     String? error,
+    bool? isLoadingInitialMessages,
+    bool? isLoadingMoreMessages,
+    bool? hasReachedEndOfHistory,
+    int? currentPage,
   }) {
     return ChatState(
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
       isAiTyping: isAiTyping ?? this.isAiTyping,
-      error: error ?? this.error,
+      error: error,
+      isLoadingInitialMessages: isLoadingInitialMessages ?? this.isLoadingInitialMessages,
+      isLoadingMoreMessages: isLoadingMoreMessages ?? this.isLoadingMoreMessages,
+      hasReachedEndOfHistory: hasReachedEndOfHistory ?? this.hasReachedEndOfHistory,
+      currentPage: currentPage ?? this.currentPage,
     );
   }
 }

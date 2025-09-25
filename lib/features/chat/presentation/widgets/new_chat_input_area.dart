@@ -9,12 +9,14 @@ class NewChatInputArea extends ConsumerWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
   final bool isLoading;
+  final double height;
 
   const NewChatInputArea({
     super.key,
     required this.controller,
     required this.onSend,
     this.isLoading = false,
+    this.height = 130.0, // ✅ Default height
   });
 
   @override
@@ -49,6 +51,9 @@ class NewChatInputArea extends ConsumerWidget {
           children: [
             // ✅ Simple input container without glassmorphism
             Container(
+              constraints: BoxConstraints(
+                minHeight: height * 0.7, // ✅ Responsive height constraint
+              ),
               decoration: BoxDecoration(
                 color: AppTheme.darkCard, // ✅ Simple solid background
                 borderRadius: BorderRadius.circular(30.0),
