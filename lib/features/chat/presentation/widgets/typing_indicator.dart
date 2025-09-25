@@ -32,77 +32,82 @@ class _TypingIndicatorState extends State<TypingIndicator>
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ✅ Thinking process placeholder (collapsed)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.1),
-                width: 1,
+      // ✅ Add accessibility semantics
+      child: Semantics(
+        label: 'AI assistant is typing',
+        hint: 'Please wait while the AI assistant generates a response',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ✅ Thinking process placeholder (collapsed)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.1),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.yellow.shade400,
+                          Colors.orange.shade400,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.auto_awesome,
+                      color: Colors.white,
+                      size: 12,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Düşünüyor...',
+                    style: TextStyle(
+                      color: AppTheme.mediumText,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.yellow.shade400,
-                        Colors.orange.shade400,
-                      ],
+            const SizedBox(height: 12),
+            
+            // ✅ Typing indicator (bubble-less)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildAnimatedDot(0),
+                  const SizedBox(width: 4),
+                  _buildAnimatedDot(1),
+                  const SizedBox(width: 4),
+                  _buildAnimatedDot(2),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Yanıt yazılıyor...',
+                    style: TextStyle(
+                      color: AppTheme.mediumText,
+                      fontSize: 14,
                     ),
-                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
-                    Icons.auto_awesome,
-                    color: Colors.white,
-                    size: 12,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Düşünüyor...',
-                  style: TextStyle(
-                    color: AppTheme.mediumText,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          
-          // ✅ Typing indicator (bubble-less)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildAnimatedDot(0),
-                const SizedBox(width: 4),
-                _buildAnimatedDot(1),
-                const SizedBox(width: 4),
-                _buildAnimatedDot(2),
-                const SizedBox(width: 8),
-                const Text(
-                  'Yanıt yazılıyor...',
-                  style: TextStyle(
-                    color: AppTheme.mediumText,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     )
         .animate()

@@ -6,10 +6,12 @@ import '../../../../core/widgets/glassmorphic_container.dart';
 
 class NewChatHeader extends ConsumerWidget {
   final VoidCallback onModelSelectorTap;
+  final double height;
 
   const NewChatHeader({
     super.key,
     required this.onModelSelectorTap,
+    this.height = 90.0, // ✅ Default height
   });
 
   @override
@@ -25,7 +27,7 @@ class NewChatHeader extends ConsumerWidget {
           blurIntensity: 15.0,
           backgroundColor: Colors.black.withOpacity(0.25), // ✅ Glassmorphism effect
           borderColor: Colors.white.withOpacity(0.15),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: (height - 40) / 2), // ✅ Responsive padding
           child: Row(
             children: [
               // Menu button

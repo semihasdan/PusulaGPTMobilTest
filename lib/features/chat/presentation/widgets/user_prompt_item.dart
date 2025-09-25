@@ -38,12 +38,17 @@ class UserPromptItem extends StatelessWidget {
               ),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Text(
-              message.content ?? '', // Handle null content gracefully
-              style: const TextStyle(
-                color: AppTheme.lightText,
-                fontSize: 16,
-                height: 1.4,
+            // ✅ Add accessibility semantics
+            child: Semantics(
+              label: 'User message: ${message.content}',
+              hint: 'This is your message in the conversation',
+              child: Text(
+                message.content ?? '', // Handle null content gracefully
+                style: const TextStyle(
+                  color: AppTheme.lightText,
+                  fontSize: 16,
+                  height: 1.4,
+                ),
               ),
             ),
           ),

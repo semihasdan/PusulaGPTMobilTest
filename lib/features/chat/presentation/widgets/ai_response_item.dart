@@ -47,12 +47,17 @@ class _AIResponseItemState extends ConsumerState<AIResponseItem> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Text(
-        widget.message.content ?? '', // ✅ Handle null content gracefully
-        style: const TextStyle(
-          color: AppTheme.lightText,
-          fontSize: 16,
-          height: 1.4,
+      // ✅ Add accessibility semantics
+      child: Semantics(
+        label: 'AI response: ${widget.message.content}',
+        hint: 'This is the AI assistant\'s response to your message',
+        child: Text(
+          widget.message.content ?? '', // ✅ Handle null content gracefully
+          style: const TextStyle(
+            color: AppTheme.lightText,
+            fontSize: 16,
+            height: 1.4,
+          ),
         ),
       ),
     );
@@ -72,6 +77,7 @@ class _AIResponseItemState extends ConsumerState<AIResponseItem> {
                 ? null
                 : () => _handleLike(),
             isActive: widget.message.feedbackState == FeedbackState.liked,
+            semanticsLabel: 'Like this response',
           ),
           
           // Dislike button (transforms to check when feedback submitted)
@@ -83,18 +89,21 @@ class _AIResponseItemState extends ConsumerState<AIResponseItem> {
                 ? null
                 : () => _handleDislike(),
             isActive: widget.message.feedbackState == FeedbackState.disliked,
+            semanticsLabel: 'Dislike this response',
           ),
           
           // Regenerate button
           _buildActionButton(
             icon: Icons.refresh,
             onPressed: () => _handleRegenerate(),
+            semanticsLabel: 'Regenerate response',
           ),
           
           // Copy button
           _buildActionButton(
             icon: Icons.content_copy,
             onPressed: () => _handleCopy(),
+            semanticsLabel: 'Copy response to clipboard',
           ),
           
           // ✅ Removed Share and More Options buttons as requested
@@ -107,21 +116,25 @@ class _AIResponseItemState extends ConsumerState<AIResponseItem> {
     required IconData icon,
     required VoidCallback? onPressed,
     bool isActive = false,
+    String? semanticsLabel,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: IconButton(
-        icon: Icon(icon),
-        onPressed: onPressed,
-        style: IconButton.styleFrom(
-          backgroundColor: isActive 
-              ? AppTheme.primaryBlue.withOpacity(0.2)
-              : Colors.transparent,
-          foregroundColor: isActive 
-              ? AppTheme.primaryBlue
-              : (onPressed != null ? AppTheme.mediumText : AppTheme.mediumText.withOpacity(0.3)),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+      child: Semantics(
+        label: semanticsLabel,
+        child: IconButton(
+          icon: Icon(icon),
+          onPressed: onPressed,
+          style: IconButton.styleFrom(
+            backgroundColor: isActive 
+                ? AppTheme.primaryBlue.withOpacity(0.2)
+                : Colors.transparent,
+            foregroundColor: isActive 
+                ? AppTheme.primaryBlue
+                : (onPressed != null ? AppTheme.mediumText : AppTheme.mediumText.withOpacity(0.3)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         ),
       ),

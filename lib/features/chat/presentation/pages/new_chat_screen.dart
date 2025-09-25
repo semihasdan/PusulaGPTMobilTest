@@ -51,8 +51,9 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
     if (_scrollController.hasClients) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scrollController.hasClients) {
+          // ✅ For reverse list, scroll to position 0 (bottom)
           _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
+            0.0, // ✅ Bottom of reverse list
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOut,
           );
@@ -123,6 +124,9 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
   @override
   Widget build(BuildContext context) {
     final chatState = ref.watch(chatProvider);
+    // ✅ Get screen size for responsive design
+    final screenSize = MediaQuery.of(context).size;
+    final isLargeScreen = screenSize.width > 600;
 
     // Auto-scroll when new messages are added or typing state changes
     ref.listen<ChatState>(chatProvider, (previous, next) {
@@ -145,7 +149,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       drawer: NewChatDrawer(
-        onLanguageSettings: _showLanguageDialog,
+        onLanguageSettings: _showModelSelector,
         onLogout: _logout,
       ),
       // ✅ Stack layout with floating glassmorphic elements
@@ -154,17 +158,20 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
           // ✅ Animated gradient background as base layer
           const AnimatedGradientBackground(),
           
-          // ✅ Message area with optimized padding for floating elements
+          // ✅ Message area with pagination support
           Positioned.fill(
             child: Padding(
-              padding: const EdgeInsets.only(
-                top: 90,  // ✅ Reduced to account for closer header positioning
-                bottom: 130, // ✅ Reduced to account for closer input positioning
+              padding: EdgeInsets.only(
+                top: isLargeScreen ? 100 : 90,  // ✅ Responsive spacing for header
+                bottom: isLargeScreen ? 140 : 130, // ✅ Responsive spacing for input
               ),
               child: NewChatMessageArea(
                 messages: chatState.messages,
                 scrollController: _scrollController,
                 isAiTyping: chatState.isAiTyping,
+                isLoadingInitialMessages: chatState.isLoadingInitialMessages,
+                isLoadingMoreMessages: chatState.isLoadingMoreMessages,
+                hasReachedEndOfHistory: chatState.hasReachedEndOfHistory,
               ),
             ),
           ),
@@ -174,7 +181,11 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
             top: 0,
             left: 0,
             right: 0,
-            child: NewChatHeader(onModelSelectorTap: _showModelSelector),
+            child: NewChatHeader(
+              onModelSelectorTap: _showModelSelector,
+              // ✅ Responsive header sizing
+              height: isLargeScreen ? 100 : 90,
+            ),
           ),
           
           // ✅ Floating glassmorphic input area at bottom
@@ -186,6 +197,8 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
               controller: _messageController,
               onSend: _sendMessage,
               isLoading: chatState.isLoading,
+              // ✅ Responsive input sizing
+              height: isLargeScreen ? 140 : 130,
             ),
           ),
         ],
